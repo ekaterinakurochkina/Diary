@@ -29,7 +29,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'diary',
-    'users',
+    'users.apps.UsersConfig', # Должно быть именно так, а не просто 'users'
 ]
 
 MIDDLEWARE = [

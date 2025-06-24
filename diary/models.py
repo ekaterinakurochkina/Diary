@@ -1,11 +1,17 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator, MaxValueValidator
+
+User = get_user_model()
 
 
 class CustomField(models.Model):
     """Модель для хранения типов дополнительных полей"""
     FIELD_TYPES = [
+        ('text', 'Текст'),
+        ('number', 'Число'),
+        ('checkbox', 'Галочка'),
+        ('select', 'Выбор из списка'),
         ('nutrition', 'Дневник питания'),
         ('sport', 'Спорт'),
         ('water', 'Вода'),
@@ -20,13 +26,19 @@ class CustomField(models.Model):
     field_type = models.CharField('Тип поля', max_length=50, choices=FIELD_TYPES)
     description = models.TextField('Описание', blank=True)
     is_default = models.BooleanField('Стандартное поле', default=False)
+    order = models.PositiveSmallIntegerField(
+        'Порядок сортировки',
+        default=0,
+        help_text="Число для определения порядка полей (меньше - выше)"
+    )
 
     def __str__(self):
-        return self.name
+        return f"{self.name} ({self.get_field_type_display()})"
 
     class Meta:
         verbose_name = 'Дополнительное поле'
         verbose_name_plural = 'Дополнительные поля'
+        ordering = ['order', 'name']
 
 
 class UserSelectedFields(models.Model):
@@ -38,7 +50,8 @@ class UserSelectedFields(models.Model):
     )
     fields = models.ManyToManyField(
         CustomField,
-        verbose_name='Выбранные поля'
+        verbose_name='Выбранные поля',
+        blank=True
     )
     custom_field_name = models.CharField(
         'Название своего поля',
@@ -46,8 +59,14 @@ class UserSelectedFields(models.Model):
         blank=True
     )
 
+    def get_all_fields(self):
+        """Возвращает все поля (стандартные + выбранные)"""
+        return CustomField.objects.filter(
+            models.Q(is_default=True) | models.Q(id__in=self.fields.all())
+        ).distinct().order_by('order', 'name')
+
     def __str__(self):
-        return f"Настройки полей для {self.user.username}"
+        return f"Настройки полей для {self.user.email}"
 
     class Meta:
         verbose_name = 'Настройка полей пользователя'
@@ -63,19 +82,14 @@ class DiaryEntry(models.Model):
     )
     created_at = models.DateTimeField('Дата создания', auto_now_add=True)
     updated_at = models.DateTimeField('Дата обновления', auto_now=True)
-    entry_text = models.TextField('Основной текст', blank=False)
+    entry_text = models.TextField('Основной текст')
 
-    # Поля для хранения дополнительных данных в JSON
     additional_data = models.JSONField(
         'Дополнительные данные',
         default=dict,
         blank=True
     )
 
-    def __str__(self):
-        return f"Запись от {self.created_at.strftime('%d.%m.%Y')}"
-
-    class Meta:
-        verbose_name = 'Запись дневника'
-        verbose_name_plural = 'Записи дневника'
-        ordering = ['-created_at']
+    def get_field_value(self, field_name):
+        """Возвращает значение дополнительного поля"""
+        return
