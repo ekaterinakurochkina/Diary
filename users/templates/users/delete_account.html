@@ -3,7 +3,7 @@
 {% block content %}
 <div class="auth-container">
     <h2>Удаление аккаунта</h2>
-    <form method="post" class="auth-form">
+    <form method="post">
         {% csrf_token %}
         <p>Вы уверены, что хотите удалить свой аккаунт? Это действие нельзя отменить.</p>
         <div class="form-group">
@@ -14,4 +14,4 @@
         <a href="{% url 'diary:home' %}" class="btn btn-secondary">Отмена</a>
     </form>
 </div>
-{% endblock %}l>
+{% endblock %}

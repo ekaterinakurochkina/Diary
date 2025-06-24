@@ -25,6 +25,12 @@ class UserRegisterForm(UserCreationForm):
         widget=forms.PasswordInput(attrs={'placeholder': 'Повторите пароль'})
     )
 
+    def clean_password1(self):
+        password1 = self.cleaned_data.get('password1')
+        if len(password1) < 8:
+            raise forms.ValidationError("Пароль должен содержать минимум 8 символов")
+        return password1
+
     class Meta:
         model = User
         fields = ('email', 'display_name', 'password1', 'password2')
@@ -44,3 +50,9 @@ class UserLoginForm(AuthenticationForm):
         'invalid_login': "Неверный email или пароль",
         'inactive': "Этот аккаунт неактивен",
     }
+    remember_me = forms.BooleanField(
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(),
+        label="Запомнить меня"
+    )
