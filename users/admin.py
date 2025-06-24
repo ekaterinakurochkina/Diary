@@ -1,28 +1,19 @@
-from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin
-from .models import User
-from .forms import UserRegisterForm
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
 
-class CustomUserAdmin(UserAdmin):
-    add_form = UserRegisterForm
-    list_display = ('email', 'display_name', 'is_active', 'is_staff')
-    search_fields = ('email', 'display_name')
-    ordering = ('email',)
+# Кастомизированная админка для пользователей
+class UserAdmin(BaseUserAdmin):
+    list_display = ('email', 'display_name', 'is_staff', 'is_superuser')
+    list_filter = ('is_staff', 'is_superuser', 'is_active')
 
-    fieldsets = (
-        (None, {'fields': ('email', 'password')}),
-        ('Персональная информация', {'fields': ('display_name', 'phone', 'avatar')}),
-        ('Права', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
-        ('Важные даты', {'fields': ('last_login', 'date_joined')}),
-    )
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        return qs.filter(is_staff=True)  # Админы видят только staff пользователей
 
-    add_fieldsets = (
-        (None, {
-            'classes': ('wide',),
-            'fields': ('email', 'display_name', 'password1', 'password2'),
-        }),
-    )
+    def has_module_permission(self, request):
+        return request.user.is_staff
 
-
-admin.site.register(User, CustomUserAdmin)
+    def has_view_permission(self, request, obj=None):
+        return request.user.is_staff

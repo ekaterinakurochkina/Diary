@@ -116,3 +116,9 @@ STATICFILES_DIRS = [
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Запрет на удаление в админке
+ADMIN_DELETE_PERMISSION = False
+
+# Логирование действий в админке
+ADMIN_LOG_ACTIONS = True
