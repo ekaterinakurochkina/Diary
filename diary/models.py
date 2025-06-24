@@ -92,4 +92,4 @@ class DiaryEntry(models.Model):
 
     def get_field_value(self, field_name):
         """Возвращает значение дополнительного поля"""
-        return
+        return self.additional_data.get(field_name)

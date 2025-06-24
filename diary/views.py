@@ -1,11 +1,38 @@
-from django.shortcuts import render
-from django.views.generic import ListView, CreateView, UpdateView, DetailView, DeleteView
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
-from django.contrib import messages
-from django.shortcuts import get_object_or_404
-from .models import DiaryEntry, CustomField, UserSelectedFields
+from django.views.generic import ListView, CreateView, UpdateView, DetailView, DeleteView
+from django.views.generic.edit import FormMixin
+
 from .forms import DiaryEntryForm
+from .models import DiaryEntry, CustomField, UserSelectedFields
+
+import json
+import random
+from django.http import JsonResponse
+from django.conf import settings
+import os
+
+
+def get_random_phrase(request):
+    # Путь к файлу с фразами
+    phrases_path = os.path.join(settings.STATIC_ROOT, 'diary', 'data', 'daily_phrases.json')
+
+    try:
+        with open(phrases_path, 'r', encoding='utf-8') as f:
+            phrases = json.load(f)
+            random_phrase = random.choice(phrases)
+            return JsonResponse({'phrase': random_phrase})
+    except Exception as e:
+        return JsonResponse({'phrase': 'Хорошего дня!'}, status=500)
+
+
+
+class DiaryEntryFormMixin(FormMixin):
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
 
 
 class DiaryEntryListView(LoginRequiredMixin, ListView):
@@ -16,7 +43,23 @@ class DiaryEntryListView(LoginRequiredMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        return DiaryEntry.objects.filter(user=self.request.user).order_by('-created_at')
+        queryset = DiaryEntry.objects.filter(user=self.request.user).order_by('-created_at')
+
+        # Фильтрация по поиску
+        search = self.request.GET.get('search')
+        if search:
+            queryset = queryset.filter(entry_text__icontains=search)
+
+        # Фильтрация по дате
+        date_from = self.request.GET.get('date_from')
+        date_to = self.request.GET.get('date_to')
+
+        if date_from:
+            queryset = queryset.filter(created_at__gte=date_from)
+        if date_to:
+            queryset = queryset.filter(created_at__lte=date_to)
+
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -24,7 +67,7 @@ class DiaryEntryListView(LoginRequiredMixin, ListView):
         return context
 
 
-class DiaryEntryCreateView(LoginRequiredMixin, CreateView):
+class DiaryEntryCreateView(LoginRequiredMixin, DiaryEntryFormMixin, CreateView):
     """Создание новой записи"""
     model = DiaryEntry
     form_class = DiaryEntryForm
@@ -42,7 +85,7 @@ class DiaryEntryCreateView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
 
 
-class DiaryEntryUpdateView(LoginRequiredMixin, UpdateView):
+class DiaryEntryUpdateView(LoginRequiredMixin, DiaryEntryFormMixin, UpdateView):
     """Редактирование записи"""
     model = DiaryEntry
     form_class = DiaryEntryForm

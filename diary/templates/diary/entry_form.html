@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h2>{% if object %}Редактирование{% else %}Новая запись{% endif %}</h2>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    {{ form.entry_text.label_tag }}
+                    {{ form.entry_text }}
+                    {% if form.entry_text.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.entry_text.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                {% for field in user.diary_fields_settings.get_available_fields %}
+                    {% if not field.is_default %}
+                        <div class="mb-3">
+                            <label for="id_field_{{ field.id }}">{{ field.name }}</label>
+                            {{ form|get_dict_item:'field_'|add:field.id }}
+                            {% if form.errors.field_|add:field.id %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.errors.field_|add:field.id }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+
+                <!-- Блок интерактивных элементов -->
+                <div class="d-flex justify-content-between mb-3">
+                    <button type="button" class="btn btn-outline-info" id="daily-quote-btn">
+                        <i class="bi bi-chat-quote me-2"></i>Фраза дня
+                    </button>
+                    <button type="button" class="btn btn-outline-info" id="metaphor-card-btn">
+                        <i class="bi bi-image me-2"></i>Метафорическая карта
+                    </button>
+                </div>
+
+                <!-- Контейнеры для отображения -->
+                <div id="quote-container" class="alert alert-info d-none mb-3"></div>
+
+                <div id="card-container" class="card d-none mb-3">
+                    <div class="card-body text-center">
+                        <img src="" class="img-fluid rounded mb-3" id="metaphor-card-image"
+                             alt="Метафорическая карта" style="max-height: 300px;">
+                        <p id="card-description" class="fst-italic text-muted mb-0"></p>
+                    </div>
+                </div>
+
+                <!-- Кнопки формы -->
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button type="submit" class="btn btn-primary me-md-2">
+                        <i class="bi bi-save me-2"></i>Сохранить
+                    </button>
+                    <a href="{% url 'diary:entry-list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle me-2"></i>Отмена
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Конфигурация с фразами и картами
+    const appConfig = {
+        phrases: [
+            "Каждый день — это новая возможность изменить свою жизнь",
+            "Маленькие шаги каждый день приводят к большим результатам",
+            "Сегодня — идеальный день, чтобы начать",
+            "Ваше настроение создает ваш день",
+            "Будьте добры к себе сегодня"
+        ],
+        cards: [
+            {
+                image: "{% static 'diary/images/metaphor_cards/card1.jpg' %}",
+                description: "Дорога символизирует ваш жизненный путь"
+            },
+            {
+                image: "{% static 'diary/images/metaphor_cards/card2.jpg' %}",
+                description: "Гора олицетворяет ваши цели"
+            },
+            {
+                image: "{% static 'diary/images/metaphor_cards/card3.jpg' %}",
+                description: "Мост показывает ваши связи с другими"
+            }
+        ]
+    };
+
+    // Элементы интерфейса
+    const quoteBtn = document.getElementById('daily-quote-btn');
+    const cardBtn = document.getElementById('metaphor-card-btn');
+    const quoteContainer = document.getElementById('quote-container');
+    const cardContainer = document.getElementById('card-container');
+    const cardImage = document.getElementById('metaphor-card-image');
+    const cardDescription = document.getElementById('card-description');
+
+    // Показать случайную фразу
+    quoteBtn.addEventListener('click', function() {
+        // Скрыть карту если показана
+        cardContainer.classList.add('d-none');
+
+        // Показать спиннер загрузки
+        quoteContainer.innerHTML = `
+            <div class="d-flex justify-content-center align-items-center">
+                <div class="spinner-border spinner-border-sm me-2"></div>
+                <span>Ищем вдохновляющую фразу...</span>
+            </div>
+        `;
+        quoteContainer.classList.remove('d-none');
+
+        // Имитация задержки для UX
+        setTimeout(() => {
+            const randomIndex = Math.floor(Math.random() * appConfig.phrases.length);
+            quoteContainer.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-quote me-2" style="font-size: 1.5rem;"></i>
+                    <p class="mb-0">${appConfig.phrases[randomIndex]}</p>
+                </div>
+            `;
+        }, 800);
+    });
+
+    // Показать случайную карту
+    cardBtn.addEventListener('click', function() {
+        // Скрыть фразу если показана
+        quoteContainer.classList.add('d-none');
+
+        // Проверить наличие карт
+        if (appConfig.cards.length === 0) {
+            cardDescription.textContent = 'Карты временно недоступны';
+            cardContainer.classList.remove('d-none');
+            return;
+        }
+
+        // Показать состояние загрузки
+        cardContainer.classList.remove('d-none');
+        cardImage.src = '';
+        cardImage.classList.add('opacity-25');
+        cardDescription.innerHTML = `
+            <div class="spinner-border spinner-border-sm me-2"></div>
+            Выбираем карту...
+        `;
+
+        // Выбрать случайную карту
+        const randomCard = appConfig.cards[Math.floor(Math.random() * appConfig.cards.length)];
+
+        // Предзагрузка изображения
+        const img = new Image();
+        img.onload = function() {
+            cardImage.src = randomCard.image;
+            cardImage.classList.remove('opacity-25');
+            cardDescription.textContent = randomCard.description;
+        };
+        img.onerror = function() {
+            cardImage.classList.remove('opacity-25');
+            cardDescription.textContent = 'Изображение не загружено';
+        };
+        img.src = randomCard.image;
+    });
+});
+</script>
+
+<style>
+#metaphor-card-image {
+    transition: opacity 0.3s ease;
+    object-fit: contain;
+}
+.opacity-25 {
+    opacity: 0.25;
+}
+</style>
+
+{% endblock %}
