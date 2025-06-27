@@ -1,36 +1,6 @@
-# from django.contrib.auth import get_user_model
-#
-# import admin
-# from .models import CustomField, UserSelectedFields, DiaryEntry
-#
-# User = get_user_model()
-#
-#
-# # Модель CustomField - только для суперпользователя
-# @admin.register(CustomField)
-# class CustomFieldAdmin(admin.ModelAdmin):
-#     list_display = ('name', 'field_type', 'is_default', 'order')
-#     list_filter = ('name')
-#     search_fields = ('name')
-#
-#
-# # Модель UserSelectedFields - только просмотр для администраторов
-# @admin.register(UserSelectedFields)
-# class UserSelectedFieldsAdmin(admin.ModelAdmin):
-#     list_display = ('user_email', 'fields_list')
-#     list_filter = ('user_email')
-#     search_fields = ('user_email')
-#
-#
-# # Модель DiaryEntry - только для суперпользователя
-# @admin.register(DiaryEntry)
-# class DiaryEntryAdmin(admin.ModelAdmin):
-#     list_display = ('user_email', 'created_at', 'entry_preview')
-#     list_filter = ('user_email')
-#     search_fields = ('user_email', 'created_at')
-
 from django.contrib import admin
 from django.contrib.auth import get_user_model
+
 from .models import CustomField, UserSelectedFields, DiaryEntry
 
 User = get_user_model()

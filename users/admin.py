@@ -1,19 +1,38 @@
-from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
+
+from .models import User
 
 
-# Кастомизированная админка для пользователей
-class UserAdmin(BaseUserAdmin):
-    list_display = ('email', 'display_name', 'is_staff', 'is_superuser')
-    list_filter = ('is_staff', 'is_superuser', 'is_active')
+@admin.register(User)
+class DiaryAdmin(UserAdmin):
+    list_display = ('id', 'email', 'display_name', 'is_active', 'is_staff', 'is_superuser')
+    search_fields = ('id', 'email', 'is_active')
 
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        if request.user.is_superuser:
-            return qs
-        return qs.filter(is_staff=True)  # Админы видят только staff пользователей
-
-    def has_module_permission(self, request):
-        return request.user.is_staff
-
-    def has_view_permission(self, request, obj=None):
-        return request.user.is_staff
+    fieldsets = (
+        (None, {"fields": ("email", "password")}),
+        (
+            "Permissions",
+            {
+                "fields": (
+                    "is_active",
+                    "is_staff",
+                    "is_superuser",
+                    "groups",
+                    "user_permissions",
+                ),
+            },
+        ),
+        ("Important dates", {"fields": ("last_login", "date_joined")}),
+    )
+    add_fieldsets = (
+        (
+            None,
+            {
+                "classes": ("wide",),
+                "fields": ("email", "usable_password", "password1", "password2"),
+            },
+        ),
+    )
+    ordering = ('pk',)
+    readonly_fields = ("last_login", "date_joined")
