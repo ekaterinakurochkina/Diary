@@ -19,7 +19,7 @@ class User(AbstractUser):
     display_name = models.CharField(
         max_length=150,
         verbose_name="Имя для отображения",
-        help_text="Как мы будем к вам обращаться",
+        help_text="Как мы будем к Вам обращаться",
         validators=[
             RegexValidator(
                 r'^[a-zA-Zа-яА-ЯёЁ0-9_ ]+$',  # Исправленный escape-символ
@@ -36,7 +36,7 @@ class User(AbstractUser):
         help_text="Введите номер телефона",
         validators=[
             RegexValidator(
-                r'^\+?[0-9]{9,15}$',  # Исправленный escape-символ
+                r'^\+?[0-9]{9,15}$',
                 message="Номер телефона должен быть в формате: '+999999999'"
             )
         ]
@@ -78,3 +78,10 @@ class User(AbstractUser):
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
         ordering = ['email']
+        permissions = [
+            ('can_inactivate', 'Может блокировать пользователя'),
+        ]
+
+    @property
+    def is_moderator(self) -> bool:
+        return self.groups.filter(name='Менеджер').exists()

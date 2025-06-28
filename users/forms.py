@@ -1,9 +1,14 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.contrib.auth.forms import AuthenticationForm, UserChangeForm
+from django.contrib.auth.forms import UserCreationForm
+from django.forms import ModelForm
+
+
+from diary.forms import StyleFormMixin
 from .models import User
 
 
-class UserRegisterForm(UserCreationForm):
+class UserRegisterForm(StyleFormMixin, UserCreationForm):
     display_name = forms.CharField(
         label='Как к вам обращаться?',
         max_length=150,
@@ -17,42 +22,71 @@ class UserRegisterForm(UserCreationForm):
 
     password1 = forms.CharField(
         label='Пароль',
-        widget=forms.PasswordInput(attrs={'placeholder': 'Не менее 8 символов'})
+        widget=forms.PasswordInput(attrs={'placeholder': 'Введите пароль'})
     )
 
     password2 = forms.CharField(
-        label='Подтверждение пароля',
-        widget=forms.PasswordInput(attrs={'placeholder': 'Повторите пароль'})
+        label="Подтверждение пароля",
+        widget=forms.PasswordInput(attrs={"placeholder": "Повторите пароль"})
     )
 
-    def clean_password1(self):
-        password1 = self.cleaned_data.get('password1')
-        if len(password1) < 8:
-            raise forms.ValidationError("Пароль должен содержать минимум 8 символов")
-        return password1
+    avatar = forms.ImageField(
+        label='Аватар',
+        required=False,
+        widget=forms.FileInput(attrs={'class': 'form-control-file'})
+    )
+
+    # def clean_password1(self):
+    #     password1 = self.cleaned_data.get("password1")
+        # if len(password1) < 8:
+        #     raise forms.ValidationError("Пароль должен содержать минимум 8 символов")
+        # return password1
 
     class Meta:
         model = User
-        fields = ('email', 'display_name', 'password1', 'password2')
+        fields = ("email", "display_name", "password1", "password2", "avatar")
 
 
-class UserLoginForm(AuthenticationForm):
-    username = forms.EmailField(
-        label='Email',
-        widget=forms.EmailInput(attrs={'placeholder': 'Ваш email'})
-    )
-    password = forms.CharField(
-        label='Пароль',
-        widget=forms.PasswordInput(attrs={'placeholder': 'Ваш пароль'})
-    )
+# class UserForm(StyleFormMixin, UserChangeForm):
+#     class Meta:
+#         model = User
+#         fields = (
+#             "email",
+#             "password",
+#             "phone",
+#             "avatar",
+#         )
+#
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs)
+#         phone = self.fields["phone"].widget
+#
+#         self.fields["password"].widget = forms.HiddenInput()
+#         phone.attrs["class"] = "form-control bfh-phone"
+#         phone.attrs["data-format"] = "+7 (ddd) ddd-dd-dd"
 
-    error_messages = {
-        'invalid_login': "Неверный email или пароль",
-        'inactive': "Этот аккаунт неактивен",
-    }
-    remember_me = forms.BooleanField(
-        required=False,
-        initial=True,
-        widget=forms.CheckboxInput(),
-        label="Запомнить меня"
-    )
+
+class UserUpdateForm(StyleFormMixin, ModelForm):
+    class Meta:
+        model = User
+        fields = (
+            "email",
+            "password",
+            "phone",
+            "avatar",
+        )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        phone = self.fields["phone"].widget
+
+        self.fields["password"].widget = forms.HiddenInput()
+        phone.attrs["class"] = "form-control bfh-phone"
+        phone.attrs["data-format"] = "+7 (ddd) ddd-dd-dd"
+
+
+class PasswordRecoveryForm(StyleFormMixin, forms.Form):
+    email = forms.EmailField(label="Укажите Email")
+
+class UserLoginForm(StyleFormMixin, AuthenticationForm):
+    model = User

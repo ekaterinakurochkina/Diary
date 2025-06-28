@@ -78,6 +78,7 @@ class DiaryEntry(models.Model):
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
+        blank=True,  # Разрешаем запись без дополнительных полей
         related_name='diary_entries'
     )
     created_at = models.DateTimeField('Дата создания', auto_now_add=True)

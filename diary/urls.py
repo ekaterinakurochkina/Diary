@@ -9,7 +9,7 @@ from .views import (
 app_name = 'diary'
 
 urlpatterns = [
-    path('', DiaryEntryListView.as_view(), name='entry-list'),
+    path('', DiaryEntryListView.as_view(), name='home'),
     path('create/', DiaryEntryCreateView.as_view(), name='entry-create'),
     path('<int:pk>/', DiaryEntryDetailView.as_view(), name='entry-detail'),
     path('<int:pk>/update/', DiaryEntryUpdateView.as_view(), name='entry-update'),

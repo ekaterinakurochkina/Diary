@@ -71,7 +71,7 @@ class DiaryEntryCreateView(LoginRequiredMixin, DiaryEntryFormMixin, CreateView):
     """Создание новой записи"""
     model = DiaryEntry
     form_class = DiaryEntryForm
-    template_name = 'diary/entry_form.html'
+    template_name = 'diary/entry-create'
     success_url = reverse_lazy('diary:entry-list')
 
     def get_form_kwargs(self):
